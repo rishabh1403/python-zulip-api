@@ -1,4 +1,5 @@
 language: python
+sudo: required
 python:
   - "2.7"
 install:
@@ -6,7 +7,18 @@ install:
   - pip install ./zulip
   - pip install ./zulip_bots
   - pip install ./zulip_botserver
+env:
+  global:
+    - BOTO_CONFIG=/tmp/nowhere
 script:
   - tools/lint
   - python -m unittest discover -v zulip_botserver
   - tools/test-bots
+  - cd
+  - git clone https://github.com/zulip/zulip.git
+  - cd zulip
+  - ./tools/travis/setup-backend
+  - ./tools/clean-venv-cache --travis
+  - ./tools/clean-npm-cache --travis
+  - ./tools/clean-emoji-cache --travis
+  - ./tools/travis/backend
