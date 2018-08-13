@@ -1,6 +1,7 @@
 import irc.bot
 import irc.strings
 from irc.client import ip_numstr_to_quad, ip_quad_to_numstr, Event, ServerConnection
+from irc.client_aio import AioReactor
 from typing import Any, Dict
 
 IRC_DOMAIN = "irc.example.com"
@@ -11,11 +12,17 @@ def zulip_sender(sender_string):
     return nick + "@" + IRC_DOMAIN
 
 class IRCBot(irc.bot.SingleServerIRCBot):
+    reactor_class = AioReactor
     def __init__(self, zulip_client, channel, nickname, server, port=6667):
         # type: (Any, irc.bot.Channel, str, str, int) -> None
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.channel = channel  # type: irc.bot.Channel
         self.zulip_client = zulip_client
+
+    def connect(self, *args, **kwargs):
+        self.reactor.loop.run_until_complete(
+            self.connection.connect(*args, **kwargs)
+        )
 
     def on_nicknameinuse(self, c, e):
         # type: (ServerConnection, Event) -> None
@@ -63,14 +70,13 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         # type: (ServerConnection, Event) -> None
         content = e.arguments[0]
         stream = e.target
+        stream = 'test here'
         sender = zulip_sender(e.source)
         if sender.endswith("_zulip@" + IRC_DOMAIN):
             return
 
         # Forward the stream message to Zulip
         print(self.zulip_client.send_message({
-            "forged": "yes",
-            "sender": sender,
             "type": "stream",
             "to": stream,
             "subject": "IRC",
