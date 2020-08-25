@@ -86,6 +86,8 @@ class SlackBridge:
             msg = payload['data']
             if msg['channel'] != self.channel:
                 return
+            if 'subtype' in msg:
+                return
             user_id = msg['user']
             user = self.slack_id_to_name[user_id]
             from_bot = user == self.slack_config['username']
